@@ -24,7 +24,7 @@ public class TextureToMaterialBatch : EditorWindow
     {
         GUILayout.Label("Select Folders for Conversion", EditorStyles.boldLabel);
 
-        EditorGUILayout.HelpBox("Select a folder with textures to convert and a folder to save the materials to. The texture file names should end with \"_BaseColor\", \"_Normal\", or \"_MetallicSmooth\" to be recognized.", MessageType.Info);
+        EditorGUILayout.HelpBox("Select a folder with textures to convert and a folder to save the materials to. The texture file names should end with \"_BaseColor\", \"_Normal\", or \"_MetallicSmooth\", or \"_Height\" to be recognized.", MessageType.Info);
 
         inputFolderPath = EditorGUILayout.TextField("Input Folder Path:", inputFolderPath);
         outputFolderPath = EditorGUILayout.TextField("Output Folder Path:", outputFolderPath);
@@ -74,6 +74,16 @@ public class TextureToMaterialBatch : EditorWindow
                     textureDictionary[key]["_MetallicGlossMap"] = AssetDatabase.LoadAssetAtPath<Texture2D>(textureFilePath);
                     textureDictionary[key]["_METALLICGLOSSMAP"] = null;
                 }
+                else if (textureFileName.EndsWith("_Height"))
+                {
+                    string key = textureFileName.Replace("_Height", "");
+                    if (!textureDictionary.ContainsKey(key))
+                    {
+                        textureDictionary.Add(key, new Dictionary<string, Texture2D>());
+                    }
+
+                    textureDictionary[key]["_ParallaxMap"] = AssetDatabase.LoadAssetAtPath<Texture2D>(textureFilePath);
+                }
             }
 
             foreach (KeyValuePair<string, Dictionary<string, Texture2D>> kvp in textureDictionary)
@@ -94,7 +104,10 @@ public class TextureToMaterialBatch : EditorWindow
                     material.SetTexture("_MetallicGlossMap", kvp.Value["_MetallicGlossMap"]);
                     material.EnableKeyword("_METALLICGLOSSMAP");
                 }
-
+                if (kvp.Value.ContainsKey("_ParallaxMap"))
+                {
+                    material.SetTexture("_ParallaxMap", kvp.Value["_ParallaxMap"]);
+                }
                 string materialPath = Path.Combine(outputFolderPath, kvp.Key + ".mat");
                 AssetDatabase.CreateAsset(material, materialPath);
                 Debug.Log("Material created at " + materialPath);
